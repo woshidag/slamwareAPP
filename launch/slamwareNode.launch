@@ -1,7 +1,7 @@
 <launch>
-  <node name="slamwareNode"          pkg="slamwareAPP"  type="slamwareNode" output="screen">
+  <node name="slamwareNode"          pkg="slamwareAPP"  type="slamwareNode" output="screen" respawn="true">
 
-  <param name = "ip_addres"                value = "10.16.131.69"/>
+  <param name = "ip_addres"                value = "192.168.11.1"/>
   <param name = "angle_compensate"         value = "false"/>
   <param name = "fixed_odom_map_tf"         value = "false"/>
 
@@ -38,9 +38,9 @@
   <remap from = "map_metadata"               to = "map_metadata"/>
   <remap from = "global_plan_path"           to = "global_plan_path"/>
   </node>
-
+<!--
   <node name="map2odom" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 /slamware_map /odom 100"/>
-  <node name="base2laser" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 /base_link /laser 100"/>
+  <node name="base2laser" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 /base_link /laser 100"/>-->
 
 
 

@@ -14,11 +14,28 @@ else()
 endif()
 
 find_package(Threads)
-find_package(catkin REQUIRED COMPONENTS   roscpp   rospy   sensor_msgs   std_msgs   tf)
+find_package(catkin REQUIRED COMPONENTS
+  message_generation   roscpp   rospy   sensor_msgs   std_msgs   tf)
+add_message_files(FILES
+  Pose.msg
+  Battery.msg
+)
 
-catkin_package()
+add_service_files(FILES
+  SaveMapSrv.srv
+)
+
+generate_messages(DEPENDENCIES
+  std_msgs
+)
+
+
+catkin_package(
+  CATKIN_DEPENDS
+  message_runtime)
 
 include_directories(
+  include ${catkin_INCLUDE_DIRS}
    ${catkin_INCLUDE_DIRS}
    ${SDK_INCLUDE_DIR}/include
    ${PROJECT_SOURCE_DIR}/src
@@ -28,7 +45,10 @@ message("${PROJECT_SOURCE_DIR}/src",${PROJECT_SOURCE_DIR}/src)
 link_directories( ${SDK_LIBRARY_DIR}/lib
                   ${CMAKE_SOURCE_DIR})
 
-add_executable(slamwareNode ./src/main.cpp ./src/slamwareAPP.cpp)
+
+# add_compile_options(-std=c++0x)
+add_executable(slamwareNode
+  src/TaskManager.cpp ./src/main.cpp ./src/slamware.cpp)
 
 target_link_libraries(slamwareNode
         ${catkin_LIBRARIES}
@@ -46,6 +66,6 @@ target_link_libraries(slamwareNode
         libboost_regex.a
         libboost_system.a
         libboost_thread.a
+        libboost_filesystem.a
         pthread
 )
-

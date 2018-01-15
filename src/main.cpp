@@ -10,7 +10,7 @@
 #include <rpos/robot_platforms/slamware_core_platform.h>
 #include <rpos/features/location_provider/map.h>
 
-#include  "slamwareAPP.h"
+#include  "slamware.h"
 
 using namespace rpos::robot_platforms;
 using namespace rpos::features;
@@ -22,7 +22,7 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "slamwareAPP");
   const int reconnect_count_threshold = 10;
 
-  slamwareAPP slamwareAPPNode;
+  slamware slamwareAPPNode;
 
   int reconnect_count_timer = 0;
   while(!slamwareAPPNode.connectSlamware() && reconnect_count_timer++ < reconnect_count_threshold)
