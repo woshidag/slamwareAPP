@@ -34,11 +34,11 @@
 
 namespace rpos { namespace system { namespace util {
 
-    RPOS_CORE_API class HttpsInit : public boost::noncopyable
+    class RPOS_CORE_API HttpsInit : public boost::noncopyable
     {
     public:
-        RPOS_CORE_API static void init();
-        RPOS_CORE_API static void destroy();
+        static void init();
+        static void destroy();
 
     private:
         HttpsInit();
@@ -216,8 +216,9 @@ namespace rpos { namespace system { namespace util {
 
                 while(running_handles)
                 {
-                    if(my_curl_multi_select_(curl_m_) == -1)
+                    if(my_curl_multi_wait_(curl_m_) == -1)
                     {
+                        boost::this_thread::sleep(boost::posix_time::milliseconds(SLEEP_MILLISECOND_100));
                         continue;
                     }
                     else
@@ -253,11 +254,10 @@ namespace rpos { namespace system { namespace util {
             }
         }
 
-        int my_curl_multi_select_(CURL* curl_m)
+        int my_curl_multi_wait_(CURLM* curl_m)
         {
             int ret = 0;
 
-            struct timeval timeout_tv;
             fd_set fd_read;
             fd_set fd_write;
             fd_set fd_except;
@@ -267,27 +267,10 @@ namespace rpos { namespace system { namespace util {
             FD_ZERO(&fd_write);
             FD_ZERO(&fd_except);
 
-            timeout_tv.tv_sec = 1;
-            timeout_tv.tv_usec = 0;
+            long curl_timeo = -1;
+            ret = curl_multi_timeout(curl_m, &curl_timeo);
 
-            curl_multi_fdset(curl_m, &fd_read, &fd_write, &fd_except, &max_fd);
-
-            if(max_fd == -1)
-            {
-                return -1;
-            }
-
-            int ret_code = ::select(max_fd + 1, &fd_read, &fd_write, &fd_except, &timeout_tv);
-            switch(ret_code)
-            {
-            case -1:
-                ret = -1;
-                break;
-            case 0:
-            default:
-                ret = 0;
-                break;
-            }
+            ret = curl_multi_wait(curl_m, nullptr, 0, curl_timeo, nullptr);
 
             return ret;
         }
@@ -359,9 +342,9 @@ namespace rpos { namespace system { namespace util {
             auto context = (CurlContext*)pUser;
 
             CURL *curl = curl_easy_init();
-
-            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);    // Debug
-
+#ifdef _DEBUG
+            curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+#endif
             curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L); // Do not verify certificate and host
 
             auto& method     = context->request.method_;

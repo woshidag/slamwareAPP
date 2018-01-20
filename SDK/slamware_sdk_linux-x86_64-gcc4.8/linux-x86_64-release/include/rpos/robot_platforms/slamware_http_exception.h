@@ -10,21 +10,23 @@
 #pragma once
 
 #include <rpos/robot_platforms/slamware_common_exception.h>
+#include <rpos/core/rpos_core_config.h>
+#include <rpos/robot_platforms/slamware_sdp_platform_config.h>
 
 
 namespace rpos { namespace robot_platforms { namespace http {
 
-    class HttpException : public rpos::system::detail::ExceptionBase
+    class RPOS_SLAMWARE_API HttpException : public rpos::system::detail::ExceptionBase
     {
     public:
-        RPOS_CORE_API HttpException(const int statusCode, const std::string &msg) throw()
+        HttpException(const int statusCode, const std::string &msg) throw()
             : statusCode_(statusCode), rpos::system::detail::ExceptionBase(msg)
         {}
 
         virtual ~HttpException() throw()
         {}
 
-        RPOS_CORE_API const int getStatus()
+        const int getStatus()
         {
             return statusCode_;
         }
@@ -33,7 +35,7 @@ namespace rpos { namespace robot_platforms { namespace http {
         int statusCode_;
     };
 
-    class RequestHttpException : public HttpException
+    class RPOS_SLAMWARE_API RequestHttpException : public HttpException
     {
     public:
         RequestHttpException(const int statusCode, const std::string &msg) throw()
@@ -44,7 +46,7 @@ namespace rpos { namespace robot_platforms { namespace http {
         {}
     };
 
-    class ServerHttpException : public HttpException
+    class RPOS_SLAMWARE_API ServerHttpException : public HttpException
     {
     public:
         ServerHttpException(const int statusCode, const std::string &msg) throw()

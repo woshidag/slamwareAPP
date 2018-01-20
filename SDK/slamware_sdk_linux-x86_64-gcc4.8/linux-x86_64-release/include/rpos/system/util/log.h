@@ -16,6 +16,7 @@
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
+#include <boost/filesystem/path.hpp>
 #include <list>
 
 #ifdef RPOS_TARGET_64BIT
@@ -33,20 +34,35 @@ namespace rpos { namespace system { namespace util {
         LogLevelError,
         LogLevelFatal
     };
+	
+	namespace diagnosis {
+		struct LogData
+		{
+			std::string logSource;
+			rpos::system::util::LogLevel logLevel;
+			std::string logMessage;
+		};
+	}
 
     struct LogAppenderConfig {
         LogLevel logLevel;
         std::vector<std::string> excludeLogSources;
+        std::vector<std::string> includeLogSources;
     };
 
     struct FileLogAppenderConfig : public LogAppenderConfig {
         std::string filename;
     };
 
+    struct DiagnosisPublisherLogAppenderConfig: public LogAppenderConfig {
+        std::string topic;
+    };
+
     struct LogConfig {
         LogAppenderConfig global;
         LogAppenderConfig console;
         std::vector<FileLogAppenderConfig> files;
+        std::vector<DiagnosisPublisherLogAppenderConfig> diagnosis_publishers;
     };
 
     RPOS_CORE_API void vlog(const char* source, LogLevel level, const char* msg, va_list args);
@@ -67,53 +83,62 @@ namespace rpos { namespace system { namespace util {
     RPOS_CORE_API void vfatal_out(const char* source, const char* msg, va_list args);
     RPOS_CORE_API void  fatal_out(const char* source, const char* msg, ...);
 
-    class LogScope : private boost::noncopyable {
+    class RPOS_CORE_API LogScope : private boost::noncopyable {
     public:
-        RPOS_CORE_API LogScope(const std::string& source);
-        RPOS_CORE_API ~LogScope();
+        LogScope(const std::string& source);
+        ~LogScope();
 
     public:
-        RPOS_CORE_API void vlog(LogLevel level, const char* msg, va_list args);
-        RPOS_CORE_API void log(LogLevel level, const char* msg, ...);
+        void vlog(LogLevel level, const char* msg, va_list args);
+        void log(LogLevel level, const char* msg, ...);
 
-        RPOS_CORE_API void vdebug_out(const char* msg, va_list args);
-        RPOS_CORE_API void  debug_out(const char* msg, ...);
+        void vdebug_out(const char* msg, va_list args);
+        void  debug_out(const char* msg, ...);
 
-        RPOS_CORE_API void vinfo_out(const char* msg, va_list args);
-        RPOS_CORE_API void  info_out(const char* msg, ...);
+        void vinfo_out(const char* msg, va_list args);
+        void  info_out(const char* msg, ...);
 
-        RPOS_CORE_API void vwarn_out(const char* msg, va_list args);
-        RPOS_CORE_API void  warn_out(const char* msg, ...);
+        void vwarn_out(const char* msg, va_list args);
+        void  warn_out(const char* msg, ...);
 
-        RPOS_CORE_API void verror_out(const char* msg, va_list args);
-        RPOS_CORE_API void  error_out(const char* msg, ...);
+        void verror_out(const char* msg, va_list args);
+        void  error_out(const char* msg, ...);
 
-        RPOS_CORE_API void vfatal_out(const char* msg, va_list args);
-        RPOS_CORE_API void  fatal_out(const char* msg, ...);
+        void vfatal_out(const char* msg, va_list args);
+        void  fatal_out(const char* msg, ...);
+
+    public:
+        std::string getSource() const;
+        void setSource(const std::string& source);
 
     private:
+        mutable boost::mutex lock_;
         std::string source_;
     };
 
-    class LogAppender : private boost::noncopyable {
+    class RPOS_CORE_API LogAppender : private boost::noncopyable {
     public:
         typedef boost::shared_ptr<LogAppender> Pointer;
 
     protected:
-        RPOS_CORE_API LogAppender(LogLevel logLevel = LogLevelDebug);
+        LogAppender(LogLevel logLevel = LogLevelDebug);
 
     public:
-        RPOS_CORE_API virtual ~LogAppender();
+        virtual ~LogAppender();
 
     public:
-        RPOS_CORE_API LogLevel getLogLevel() const;
-        RPOS_CORE_API void setLogLevel(LogLevel logLevel);
+        LogLevel getLogLevel() const;
+        void setLogLevel(LogLevel logLevel);
 
-        RPOS_CORE_API void append(const std::string& logSource, LogLevel logLevel, const std::string& message);
+        void append(const std::string& logSource, LogLevel logLevel, const std::string& message);
 
-        RPOS_CORE_API bool isExcluded(const std::string& logSource, LogLevel logLevel);
+        bool isExcluded(const std::string& logSource, LogLevel logLevel);
 
-        RPOS_CORE_API std::vector<std::string>& excludeSources();
+        bool isIncluded(const std::string& logSource);
+
+        std::vector<std::string>& excludeSources();
+
+        std::vector<std::string>& includeSources();
 
     protected:
         virtual void append_(const std::string& logSource, LogLevel logLevel, const std::string& message) = 0;
@@ -121,36 +146,38 @@ namespace rpos { namespace system { namespace util {
     private:
         LogLevel logLevel_;
         std::vector<std::string> excludeSources_;
+        std::vector<std::string> includeSources_;
     };
 
-    class LogManager : private boost::noncopyable {
+    class RPOS_CORE_API LogManager : private boost::noncopyable {
     public:
         typedef boost::shared_ptr<LogAppender> AppenderPointer;
         typedef boost::shared_ptr<LogManager> ManagerPointer;
 
     private:
-        RPOS_CORE_API LogManager();
+        LogManager();
 
     public:
-        RPOS_CORE_API ~LogManager();
+        ~LogManager();
 
-        RPOS_CORE_API void append(const std::string& logSource, LogLevel logLevel, const std::string& message);
+        void append(const std::string& logSource, LogLevel logLevel, const std::string& message);
 
-        RPOS_CORE_API bool isExcluded(const std::string& logSource, LogLevel logLevel);
+        bool isExcluded(const std::string& logSource, LogLevel logLevel);
+        bool isIncluded(const std::string& logSource);
 
-        RPOS_CORE_API void addAppender(AppenderPointer appender);
-        RPOS_CORE_API void removeAppender(AppenderPointer appender);
-        RPOS_CORE_API void clearAppenders();
+        void addAppender(AppenderPointer appender);
+        void removeAppender(AppenderPointer appender);
+        void clearAppenders();
 
     public:
         // Helper functions
-        RPOS_CORE_API void addConsoleAppender();
-        RPOS_CORE_API void addFileAppender(const std::string& filename);
+        void addConsoleAppender();
+        void addFileAppender(const std::string& filename);
 
-        RPOS_CORE_API void configWith(const LogConfig& config);
+        void configWith(const LogConfig& config);
 
     public:
-        RPOS_CORE_API static ManagerPointer defaultManager();
+        static ManagerPointer defaultManager();
 
     private:
         static void createManager_();
@@ -161,33 +188,50 @@ namespace rpos { namespace system { namespace util {
         LogAppenderConfig globalLogSettings_;
     };
 
-    class ConsoleLogAppender : public LogAppender {
+    class RPOS_CORE_API ConsoleLogAppender : public LogAppender {
     public:
-        RPOS_CORE_API ConsoleLogAppender(LogLevel logLevel = LogLevelDebug);
-        RPOS_CORE_API ~ConsoleLogAppender();
+        ConsoleLogAppender(LogLevel logLevel = LogLevelDebug);
+        ~ConsoleLogAppender();
 
     protected:
-        RPOS_CORE_API virtual void append_(const std::string& logSource, LogLevel logLevel, const std::string& message);
+        virtual void append_(const std::string& logSource, LogLevel logLevel, const std::string& message);
 
     private:
         boost::mutex lock_;
     };
 
-    class FileLogAppender : public LogAppender {
+    class RPOS_CORE_API FileLogAppender : public LogAppender {
     public:
-        RPOS_CORE_API FileLogAppender(const std::string& filename, LogLevel logLevel = LogLevelDebug);
-        RPOS_CORE_API ~FileLogAppender();
+        FileLogAppender(const std::string& filename, LogLevel logLevel = LogLevelDebug);
+        explicit FileLogAppender(const std::wstring& wfilename, LogLevel logLevel = LogLevelDebug, bool addUtf8Bom = false);
+        ~FileLogAppender();
 
     public:
-        RPOS_CORE_API bool isAvailable() const;
+        bool isAvailable() const;
 
     protected:
-        RPOS_CORE_API virtual void append_(const std::string& logSource, LogLevel logLevel, const std::string& message);
+        virtual void append_(const std::string& logSource, LogLevel logLevel, const std::string& message);
 
     private:
-        std::string filename_;
+        boost::filesystem::path filename_;
         FILE* file_;
         mutable boost::mutex lock_;
+    };
+
+    class RPOS_CORE_API DiagnosisPublisherLogAppender: public LogAppender
+    {
+    public:
+        explicit DiagnosisPublisherLogAppender(const std::string& topic, LogLevel logLevel = LogLevelDebug);
+        virtual ~DiagnosisPublisherLogAppender();
+
+    public:
+        const std::string& getTopic() const { return topic_; }
+
+    protected:
+        virtual void append_(const std::string& logSource, LogLevel logLevel, const std::string& message);
+
+    private:
+        const std::string topic_;
     };
 
 } } }

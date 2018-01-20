@@ -16,8 +16,8 @@
 
 namespace rpos { namespace system { namespace config {
 
-    extern bool rawConfigError(const char* msg, ...);
-    extern bool configError(const Json::Value& config, const char* msg, ...);
+    extern RPOS_CORE_API bool rawConfigError(const char* msg, ...);
+    extern RPOS_CORE_API bool configError(const Json::Value& config, const char* msg, ...);
 
     template<class T>
     struct ConfigParser {
@@ -111,13 +111,13 @@ namespace rpos { namespace system { namespace config {
 #define CONFIG_PARSE_CHILD(Name) \
     do { \
         if (!parseChildConfig(config, #Name, that.Name)) \
-            return false; \
+            return configError(config, "Field: %s", #Name); \
     } while (false)
 
 #define CONFIG_PARSE_CHILD_WITH_DEFAULT(Name, Default) \
     do { \
         if (!parseChildConfigWithDefault(config, #Name, that.Name, Default)) \
-            return false; \
+            return configError(config, "Field: %s", #Name); \
     } while (false)
 
     //
@@ -283,4 +283,24 @@ namespace rpos { namespace system { namespace config {
         }
     };
 
+
+    template < class TConfig >
+    struct ServiceConfig {
+        bool enabled;
+        TConfig config;
+    };
+
+    template < class TConfig >
+    struct ConfigParser < ServiceConfig<TConfig> > {
+        static bool parse(const Json::Value& config, ServiceConfig<TConfig>& that)
+        {
+            CONFIG_PARSE_CHILD_WITH_DEFAULT(enabled, false);
+            return ConfigParser<TConfig>::parse(config, that.config);
+        }
+    };
+
 } } }
+
+#define DECLARE_CONFIG_PARSER(Type) template<> struct ConfigParser < Type > { static bool parse(const Json::Value& config, Type& that); };
+#define BEGIN_CONFIG_PARSER(Type) bool ConfigParser < Type > :: parse(const Json::Value& config, Type& that) {
+#define END_CONFIG_PARSER }

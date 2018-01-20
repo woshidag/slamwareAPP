@@ -147,7 +147,7 @@ namespace rpos { namespace system { namespace util {
             }
 
             boost::system::error_code ec;
-            socket_.shutdown(boost::asio::socket_base::shutdown_type::shutdown_both, ec);
+            socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
             socket_.close(ec);
         }
 
@@ -261,7 +261,7 @@ namespace rpos { namespace system { namespace util {
                 {
                     boost::system::error_code ec;
                     // try next endpoint
-                    socket_.shutdown(boost::asio::socket_base::shutdown_type::shutdown_both, ec);
+                    socket_.shutdown(boost::asio::socket_base::shutdown_both, ec);
                     socket_.close(ec);
                     connect_();
                 }

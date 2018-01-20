@@ -9,6 +9,8 @@
 #pragma once
 
 #include <rpos/rpos_config.h>
+#include <rpos/core/rpos_core_config.h>
+#include <rpos/core/pose.h>
 #include <json/json.h>
 #include <vector>
 #include <list>
@@ -16,7 +18,9 @@
 #include <cstdint>
 
 #define RPOS_LIB_NAME rpos_deps_jsoncpp
+#define RPOS_AUTO_LINK_NO_VERSION
 #	include <rpos/system/util/auto_link.h>
+#undef RPOS_AUTO_LINK_NO_VERSION
 #undef RPOS_LIB_NAME
 
 namespace rpos { namespace system { namespace serialization { namespace json {
@@ -249,6 +253,21 @@ namespace rpos { namespace system { namespace serialization { namespace json {
 
             return output;
         }
+    };
+
+    template <>
+    struct RPOS_CORE_API Serializer < std::vector < rpos::core::Location > >
+    {
+        static Json::Value serialize(const std::vector< rpos::core::Location >& v);
+        static std::vector< rpos::core::Location > deserialize(const Json::Value& v);
+    };
+
+
+    template <>
+    struct RPOS_CORE_API Serializer < std::vector < std::uint8_t > >
+    {
+        static Json::Value serialize(const std::vector< std::uint8_t >& v);
+        static std::vector< std::uint8_t > deserialize(const Json::Value& v);
     };
 
 }}}}

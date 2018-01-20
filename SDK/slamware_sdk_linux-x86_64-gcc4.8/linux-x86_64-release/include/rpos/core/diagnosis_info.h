@@ -39,25 +39,25 @@ namespace rpos { namespace core {
     };
 
     template<>
-    struct DiagnosisInfoNameTrait<DiagnosisInfoLidarScan>
+    struct RPOS_CORE_API DiagnosisInfoNameTrait<DiagnosisInfoLidarScan>
     {
         static const char* name;
     };
 
     template<>
-    struct DiagnosisInfoNameTrait<DiagnosisInfoSensorsData>
+    struct RPOS_CORE_API DiagnosisInfoNameTrait<DiagnosisInfoSensorsData>
     {
         static const char* name;
     };
 
     template<>
-    struct DiagnosisInfoNameTrait<DiagnosisInfoDepthCameraScan>
+    struct RPOS_CORE_API DiagnosisInfoNameTrait<DiagnosisInfoDepthCameraScan>
     {
         static const char* name;
     };
 
     template<>
-    struct DiagnosisInfoNameTrait<std::string>
+    struct RPOS_CORE_API DiagnosisInfoNameTrait<std::string>
     {
         static const char* name;
     };

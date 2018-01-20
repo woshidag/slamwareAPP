@@ -8,6 +8,11 @@
 # include <string>
 # include <iostream>
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4251)
+#endif // _MSC_VER
+
 namespace Json {
 
    /** \brief Unserialize a <a HREF="http://www.json.org">JSON</a> document into a Value.
@@ -192,5 +197,9 @@ namespace Json {
    std::istream& operator>>( std::istream&, Value& );
 
 } // namespace Json
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif // _MSC_VER
 
 #endif // CPPTL_JSON_READER_H_INCLUDED

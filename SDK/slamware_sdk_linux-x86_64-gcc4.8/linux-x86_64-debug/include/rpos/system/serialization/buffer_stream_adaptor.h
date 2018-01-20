@@ -6,12 +6,12 @@
 
 namespace rpos { namespace system { namespace serialization {
 
-    RPOS_CORE_API class BufferStreamAdaptor : public IStream
+    class RPOS_CORE_API BufferStreamAdaptor : public IStream
     {
     public:
-        RPOS_CORE_API BufferStreamAdaptor(std::vector<system::types::_u8> *buf);
+        BufferStreamAdaptor(std::vector<system::types::_u8> *buf);
 
-        RPOS_CORE_API virtual ~BufferStreamAdaptor();
+        virtual ~BufferStreamAdaptor();
 
         virtual size_t read(void *buffer, size_t count);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <rpos/core/rpos_core_config.h>
+
 #ifdef RPOS_SLAMWARE_DLL
 #   ifdef RPOS_SLAMWARE_EXPORT
 #       define RPOS_SLAMWARE_API RPOS_MODULE_EXPORT

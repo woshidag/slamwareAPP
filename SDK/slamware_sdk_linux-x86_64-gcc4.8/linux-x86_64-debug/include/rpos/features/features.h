@@ -16,3 +16,4 @@
 #include "location_provider.h"
 #include "motion_planner.h"
 #include "system_resource.h"
+#include "statistics_provider.h"

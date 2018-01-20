@@ -18,6 +18,8 @@
 #include "laser_scan.h"
 #include "device_info.h"
 #include "device_health.h"
+#include "power_management.h"
+#include "../../message/depth_camera_messages.h"
 
 namespace rpos { namespace features {
 
@@ -28,21 +30,21 @@ namespace rpos { namespace features {
             RestartModeSoft,
             RestartModeHard
         };
-
-        enum CalibrationType {
-            CalibrationTypeCompass
-        };
         
         enum NetworkMode {
             NetworkModeAP,
             NetworkModeStation,
-            NetworkModeWifiDisabled
+            NetworkModeWifiDisabled,
+            NetworkModeDHCPDisabled,
+            NetworkModeDHCPEnabled
         };
 
         struct NetworkStatus
         {
             std::map<std::string, std::string> options;
         };
+        typedef std::uint32_t HeartBeatToken;
+        const std::uint32_t MAX_CONCURRENT_HEART_BEAT = 1;
     }
 
     namespace detail {
@@ -61,6 +63,9 @@ namespace rpos { namespace features {
         int getBatteryPercentage();
         bool getBatteryIsCharging();
         bool getDCIsConnected();
+        system_resource::PowerStatus getPowerStatus();
+        void wakeUp();
+
         int getBoardTemperature();
         std::string getSDPVersion();
         system_resource::LaserScan getLaserScan();
@@ -68,12 +73,17 @@ namespace rpos { namespace features {
         bool setSystemParameter(const std::string& param, const std::string& value);
         std::string getSystemParameter(const std::string& param);
         system_resource::DeviceInfo getDeviceInfo();
-        void startCalibration(system_resource::CalibrationType type);
-        void stopCalibration();
         rpos::features::system_resource::BaseHealthInfo getRobotHealth();
         void clearRobotHealth(int errorCode);
         bool configurateNetwork(rpos::features::system_resource::NetworkMode mode, const std::map<std::string, std::string>& options);
         std::map<std::string, std::string> getNetworkStatus();
+        system_resource::HeartBeatToken startHeartBeat(int heartBeatTimeoutInSeconds);
+        void refreshHeartBeat(system_resource::HeartBeatToken token);
+        void stopHeartBeat(system_resource::HeartBeatToken token);
+        void voiceRespond();
+        void startFirmwareUpgrade(const std::string& filename);
+        void startFirmwareUpgrade(const std::vector<uint8_t>& firmwareContent);
+        void publishDepthCamFrame(int sensorId, const rpos::message::depth_camera::DepthCameraFrame& frame);
     };
 
 } }

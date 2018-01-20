@@ -26,9 +26,15 @@ namespace rpos { namespace actions {
         ~SweepMoveAction();
 
     public:
+        void pause();
+        void resume();
+        std::string getStage();
         std::vector<features::location_provider::MapType> getAvailableSweepMaps();
         features::location_provider::Map getSweepMap(features::location_provider::MapType type, core::RectangleF area);
         core::RectangleF getSweepMapArea(features::location_provider::MapType type);
+        int getRunTime();
+        int getSweepTime();
+        float getSweepArea();
     };
 
 } }

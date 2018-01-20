@@ -37,6 +37,10 @@
   <remap from = "map"                        to = "slamware_map"/>
   <remap from = "map_metadata"               to = "map_metadata"/>
   <remap from = "global_plan_path"           to = "global_plan_path"/>
+  <remap from = "slamwareNode/guide"         to = "guide"/>
+  <remap from = "slamwareNode/tts"           to = "tts"/>
+  <remap from = "slamwareNode/battery"       to = "battery"/>
+
   </node>
 <!--
   <node name="map2odom" pkg="tf" type="static_transform_publisher" args="0 0 0 0 0 0 1 /slamware_map /odom 100"/>

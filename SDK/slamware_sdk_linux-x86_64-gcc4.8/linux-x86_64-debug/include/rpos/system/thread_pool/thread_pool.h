@@ -1,11 +1,12 @@
 #pragma once
 
+#include <rpos/core/rpos_core_config.h>
 #include "thread_pool_worker.h"
 #include <vector>
 
 namespace rpos { namespace system { namespace thread_pool {
 
-    class ThreadPool : public boost::enable_shared_from_this<ThreadPool>, private boost::noncopyable {
+    class RPOS_CORE_API ThreadPool : public boost::enable_shared_from_this<ThreadPool>, private boost::noncopyable {
     public:
         ThreadPool();
         ~ThreadPool();

@@ -15,29 +15,39 @@
 #include <rpos/core/geometry.h>
 #include <vector>
 
+#define MAP_INDEX_IN_JSON_ARRAY 0u
+#define POSE_INDEX_IN_JSON_ARRAY 1u
+
 namespace rpos {
     namespace features {
         namespace location_provider {
 
             // Base Map
             enum MapType {
-                MapTypeBitmap8Bit = 0
+                MapTypeBitmap8Bit = 0,
+                MapTypePointmap
             };
 
             enum MapKind {
                 EXPLORERMAP = 0,
-                SWEEPERMAP  = 10
+                SWEEPERMAP  = 10,
+                UWBMAP = 20
             };
 
 
             class Map;
+            class BitmapMap;
 
             namespace detail {
                 class MapImpl;
 
                 template<class MapT>
                 struct map_caster {
-                    static MapT cast(Map&);
+                    static MapT cast(const Map&);
+                };
+                template<>
+                struct RPOS_CORE_API map_caster < BitmapMap > {
+                    static BitmapMap cast(const Map& map);
                 };
             }
 
@@ -54,12 +64,13 @@ namespace rpos {
                 core::Vector2f& getMapResolution() const;
                 system::types::timestamp_t getMapTimestamp();
                 std::vector<rpos::system::types::_u8>& getMapData() const;
+                MapType getMapType() const;
 
                 virtual bool readFromStream(rpos::system::serialization::IStream &in);
                 virtual bool writeToStream(rpos::system::serialization::IStream &out) const;
 
                 template<class MapT>
-                MapT cast()
+                MapT cast() const
                 {
                     return detail::map_caster<MapT>::cast(*this);
                 }

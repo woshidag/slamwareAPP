@@ -3,6 +3,7 @@
 #include <rpos/core/rpos_core_config.h>
 #include <string>
 #include <vector>
+#include <stdio.h>
 
 namespace rpos { namespace system { namespace util {
 
@@ -21,6 +22,11 @@ namespace rpos { namespace system { namespace util {
     */
     RPOS_CORE_API bool dir_create(const std::string& path, bool createParentDirectoryIfNotExist = true);
 
+	/**
+	* \brief Find all files and directories in a directory
+	*/
+	RPOS_CORE_API bool dir_scan(const std::string& path, std::vector<std::string>& outFiles);
+
     /**
     * \brief Copy file
     */
@@ -35,6 +41,11 @@ namespace rpos { namespace system { namespace util {
     * \brief Delete file
     */
     RPOS_CORE_API bool file_del(const std::string& path);
+
+    /**
+    * \brief Open file by wstring
+    */
+    RPOS_CORE_API ::FILE* file_open(const std::wstring& path, const std::wstring& mode);
 
     /**
     * \brief Get temp directory

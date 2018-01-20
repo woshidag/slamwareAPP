@@ -16,6 +16,8 @@ namespace rpos { namespace system { namespace thread_pool {
         bool pop(Task& target);
         void push(const Task& task);
 
+        void interrupt();
+
         void runOnce();
         void runAll();
 
@@ -28,6 +30,7 @@ namespace rpos { namespace system { namespace thread_pool {
     private:
         mutable boost::mutex lock_;
         boost::condition_variable cond_;
+        bool interrupted_;
         std::list<Task> tasks_;
     };
 

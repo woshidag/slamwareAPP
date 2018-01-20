@@ -8,20 +8,20 @@
 
 #pragma once
 
-#include <rpos/rpos_config.h>
+#include <rpos/core/rpos_core_config.h>
 
 namespace rpos { namespace system { namespace util {
 
     namespace high_resolution_clock {
-        long long get_time_in_us();
-        long long get_time_in_ms();
-        long long get_time_in_s();
+        RPOS_CORE_API long long get_time_in_us();
+        RPOS_CORE_API long long get_time_in_ms();
+        RPOS_CORE_API long long get_time_in_s();
     } 
 
     namespace thread_clock {
-        long long get_time_in_us();
-        long long get_time_in_ms();
-        long long get_time_in_s();
+        RPOS_CORE_API long long get_time_in_us();
+        RPOS_CORE_API long long get_time_in_ms();
+        RPOS_CORE_API long long get_time_in_s();
     }
 
 } } }

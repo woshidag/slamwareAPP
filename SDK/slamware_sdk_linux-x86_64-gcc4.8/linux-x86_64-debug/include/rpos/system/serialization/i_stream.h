@@ -5,7 +5,7 @@
 
 namespace rpos { namespace system { namespace serialization {
 
-    RPOS_CORE_API class IStream
+    class RPOS_CORE_API IStream
     {
     public:
         virtual size_t read(void *buffer, size_t count) = 0;
@@ -20,7 +20,7 @@ namespace rpos { namespace system { namespace serialization {
         void writeBuffer(const uint8_t *buffer, size_t count);
     };
 
-    RPOS_CORE_API class ISerializable
+    class RPOS_CORE_API ISerializable
     {
     public:
         virtual bool readFromStream(IStream &in) = 0;
@@ -42,8 +42,6 @@ namespace rpos { namespace system { namespace serialization {
     DECLARE_ISTREAM_READ_WRITE(int64_t)
     DECLARE_ISTREAM_READ_WRITE(float)
     DECLARE_ISTREAM_READ_WRITE(double)
-
-    IStream& operator<<(IStream&out, const std::vector<uint8_t> & buf);
-    IStream& operator>>(IStream&in, std::vector<uint8_t> & buf);
+    DECLARE_ISTREAM_READ_WRITE(std::vector<uint8_t>)
 
 } } }

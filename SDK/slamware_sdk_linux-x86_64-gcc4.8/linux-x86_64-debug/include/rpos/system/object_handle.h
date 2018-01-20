@@ -53,6 +53,16 @@ namespace rpos { namespace system {
         }
 #endif
 
+		ImplPointer implementation()
+		{
+			return impl_;
+		}
+
+		const ImplPointer implementation() const
+		{
+			return impl_;
+		}
+
     protected:
         ObjectHandle()
         {}

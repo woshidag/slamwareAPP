@@ -107,6 +107,8 @@ void slamware::init()
     //service
     if(!nh_.getParam("save_map_service", save_map_srv_))
         save_map_srv_ ="save_map";
+    if(!nh_.getParam("get_pose_service", get_pose_srv_))
+        get_pose_srv_ ="get_pose";
 
     //param
     if(!nh_.getParam("robot_pose_pub_period", robot_pose_pub_period_))
@@ -132,7 +134,14 @@ void slamware::init()
     if(!nh_.getParam("map_size_height", map_size_height_))
         map_size_height_ = 40;
 
-        
+    if(!nh_.getParam("battery_low_worning_value", battery_low_worning_value_))
+        battery_low_worning_value_ = 30;
+    if(!nh_.getParam("go_home_time_out", go_home_time_out_))
+        go_home_time_out_ = 15;
+
+    file_vec = {"p1.json", "p2.json", "p3.json"};
+    try_count_ = 0;
+    max_try_count_ = 4;
 }
 
 bool slamware::connectSlamware()
@@ -160,14 +169,18 @@ void slamware::loopThreads()
     // gridmap_info_pub_ = nh_.advertise<nav_msgs::MapMetaData>(map_info_topic_, 1, true);
     // global_plan_pub_ = nh_.advertise<nav_msgs::Path>(path_topic_, 2);
     battery_pub_ = nh_.advertise<slamwareAPP::Battery>(battery_topic_, 2);
-    tts_pub_ = nh_.advertise<std_msgs::String>(battery_topic_, 2);
+    tts_pub_ = nh_.advertise<std_msgs::String>(tts_topic_, 2);
 
     robot_vel_sub_ = nh_.subscribe (vel_control_topic_, 10, &slamware::robotControlCallback, this);
     goal_sub_ = nh_.subscribe (goal_topic_, 1, &slamware::moveToGoalCallback, this);
     guide_sub_ = nh_.subscribe (guide_topic_, 1, &slamware::guideCallback, this);
 
     save_map_service_ = nh_.advertiseService(save_map_srv_, &slamware::saveMapService, this);
+    pose_service_ = nh_.advertiseService(get_pose_srv_, &slamware::getPoseService, this);
 
+
+    battery_timer_ = nh_.createTimer(ros::Duration(20), &slamware::batteryMonitor, this);
+    battery_timer_.start();
     // robot_pose_pub_thread_ = new boost::thread(boost::bind(&slamware::publishRobotPose, this, robot_pose_pub_period_));
     // scan_pub_thread_ = new boost::thread(boost::bind(&slamware::publishScan, this, scan_pub_period_));
     // map_pub_thread_ = new boost::thread(boost::bind(&slamware::publishMap, this, map_pub_period_));
@@ -175,11 +188,23 @@ void slamware::loopThreads()
 
     battery_pub_thread_ = boost::make_shared<boost::thread>(boost::bind(&slamware::publishBattery, this, battery_period_));
     save_pose_thread_ = boost::make_shared<boost::thread>(boost::bind(&slamware::savePoseThread, this, save_pose_period_));
+
+    
 }
 
 void slamware::startSlamwareWork()
 {
     uploadMap();
+    SDP_.setMapUpdate(false);
+    std::cout << "setMapUpdate false" << std::endl;
+/*
+#define SYSPARAM_ROBOT_SPEED "base.max_moving_speed"
+#define SYSVAL_ROBOT_SPEED_HIGH "high"
+#define SYSVAL_ROBOT_SPEED_MEDIUM "medium"
+#define SYSVAL_ROBOT_SPEED_LOW "low"
+*/
+    SDP_.setSystemParameter(SYSPARAM_ROBOT_SPEED, SYSVAL_ROBOT_SPEED_HIGH);
+    std::cout << "setSystemParameter" << SYSPARAM_ROBOT_SPEED << " " << SYSVAL_ROBOT_SPEED_HIGH << std::endl;
     loopThreads();
 }
 
@@ -484,61 +509,67 @@ void slamware::moveToGoalCallback (const geometry_msgs::PoseStamped::ConstPtr& g
 
 void slamware::guideCallback (const slamwareAPP::Pose::ConstPtr& pose)
 {
-    rpos::actions::MoveAction moveAction = SDP_.getCurrentAction();
-    moveAction = SDP_.getCurrentAction();
-    boost::this_thread::sleep_for(boost::chrono::milliseconds(2000));
-    moveAction = SDP_.moveTo(rpos::core::Location(pose->x, pose->y), false, true);
+    if (isNear(SDP_.getLocation(), rpos::core::Location(pose->x, pose->y), 0.5)) {
+        std_msgs::String str;
+        str.data = std::string("你就在") + pose->name + std::string("附近");
+        tts_pub_.publish(str);
+        return;
+    }
 
-    /*
-        TaskManager add a task and init the task;
-    */
+    // std_msgs::String str;
+    // str.data = "跟我走吧";
+    // tts_pub_.publish(str);    
+
+    rpos::actions::MoveAction moveAction = SDP_.getCurrentAction();
+    // moveAction = SDP_.getCurrentAction();
+    boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
+
     rpos::core::Pose start_pose = SDP_.getPose();
     rpos::core::Pose target_pose = rpos::core::Pose(rpos::core::Location(pose->x, pose->y), rpos::core::Rotation(pose->yaw));
-    task_manager_.addTask(boost::make_shared<Task>(Task::taskType::moveType, start_pose, target_pose));
+    if (go_home_timer_.hasPending())
+        go_home_timer_.stop();
+    go_home_timer_ = nh_.createTimer(ros::Duration(0.5),  boost::bind(&slamware::goHome, this, _1, target_pose, std::string("跟我走吧")), true);
+    this->try_count_ = 0;
+    // moveAction = SDP_.moveTo(rpos::core::Location(pose->x, pose->y), false, true);
 
-    while(ros::ok() && (moveAction.getStatus() != rpos::core::ActionStatusFinished && moveAction.getStatus() != rpos::core::ActionStatusError ) )
-    {
-        boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
-    }
+    // /*
+    //     TaskManager add a task and init the task;
+    // */
+    // rpos::core::Pose start_pose = SDP_.getPose();
+    // rpos::core::Pose target_pose = rpos::core::Pose(rpos::core::Location(pose->x, pose->y), rpos::core::Rotation(pose->yaw));
+    // task_manager_.addTask(boost::make_shared<Task>(Task::taskType::moveType, start_pose, target_pose));
 
+    // while(ros::ok() && (moveAction.getStatus() != rpos::core::ActionStatusFinished && moveAction.getStatus() != rpos::core::ActionStatusError ) )
+    // {
+    //     boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
+    // }
 
-    // std_msgs::String result;
-    // rpos::core::Pose home;
-    // rpos::core::Pose pose;
-    // switch (as) {
-    //     case ActionStatus::ActionStatusFinished:
-    //     // result.data = target_name;
-    //     // move_action_pub.publish(result);
+    // auto actionStatus = moveAction.getStatus();
+    // if (actionStatus == rpos::core::ActionStatusFinished) {
+    //     std_msgs::String str;
+    //     str.data = "到达目的地";
+    //     tts_pub_.publish(str);
+    //     rpos::actions::MoveAction act = SDP_.rotateTo(Rotation(pose->yaw,0.0,0.0));
+    //     go_home_timer_ = nh_.createTimer(ros::Duration(go_home_time_out_),  boost::bind(&slamware::goHome, this, _1, SDP_.getHomePose(), std::string("我要回去了")), true);
+    //     go_home_timer_.start();
+    // } else if(actionStatus == rpos::core::ActionStatusError) {
+    //     std_msgs::String str;
+    //     str.data = "无法到达目的地";
+    //     tts_pub_.publish(str);
 
-    //     // std_msgs::String result;
-    //     result.data = "到达目的地";
-    //     tts_pub.publish(result);
-
-    //     break;
-    //     case ActionStatus::ActionStatusError:
-    //     result.data = "无法到达目的地";
-    //     tts_pub.publish(result);
-    //     default:
-    //     break;
-
-    auto actionStatus = moveAction.getStatus();
-    if (actionStatus == rpos::core::ActionStatusFinished) {
-        std_msgs::String str;
-        str.data = "到达目的地";
-        tts_pub_.publish(str);
-    } else if(actionStatus == rpos::core::ActionStatusError) {
-        std_msgs::String str;
-        str.data = "无法到达目的地";
-        tts_pub_.publish(str);
-    }
+    //     go_home_timer_ = nh_.createTimer(ros::Duration(go_home_time_out_),  boost::bind(&slamware::goHome, this, _1, target_pose, std::string("再次尝试去") + pose->name), true);
+    //     go_home_timer_.start();
+    // }
 
     /*
         TaskManager add a task and init the task;
     */
 
-    rpos::actions::MoveAction act = SDP_.rotateTo(Rotation(pose->yaw,0.0,0.0));
+    
     // float yaw = tf::getYaw(goal->pose.orientation);
     // rpos::actions::MoveAction act = SDP_.rotateTo(Rotation(yaw,0.0,0.0));
+
+
     return;
 }
 
@@ -549,7 +580,18 @@ bool slamware::saveMapService (slamwareAPP::SaveMapSrv::Request& request, slamwa
     // rpos/robot_platforms/objects
     CompositeMapWriter composite_map_writer;
     CompositeMap composite_map = SDP_.getCompositeMap();
+    // MapLayer
     // auto maps = composite_map.maps();
+    // auto points_map_layer = boost::make_shared<PointsMapLayer>();
+    // // PointsMapLayer points_map_layer;
+    // auto points = points_map_layer->points();
+    // rpos::core::Location loc;
+    // PointPDF point_PDF = {1, loc, 0.0, {"test"}};
+    // points.push_back(point_PDF);
+    // maps.push_back(points_map_layer);
+    // // composite_map.
+
+    // // maps.
     // for_each(maps.begin(), maps.end(), [](boost::shared_ptr<MapLayer> _layer){
     //     boost::shared_ptr<MapLayer> layer = _layer;
     //     std::cout << "name = " << layer->getName() << std::endl;
@@ -569,6 +611,16 @@ bool slamware::saveMapService (slamwareAPP::SaveMapSrv::Request& request, slamwa
     }
 }
 
+bool slamware::getPoseService (slamwareAPP::GetPoseSrv::Request& request, slamwareAPP::GetPoseSrv::Response& response)
+{
+    auto pose = SDP_.getPose();
+    response.x = pose.x();
+    response.y = pose.y();
+    response.yaw = pose.yaw();
+    return true;
+}
+
+
 bool slamware::uploadMap()
 {
     std::string errMsg;
@@ -577,7 +629,9 @@ bool slamware::uploadMap()
     
     if (errMsg.empty()) {
         rpos::core::Pose pose;
-        loadPose(pose);
+        for (std::vector<std::string>::iterator it = file_vec.begin() ; it != file_vec.end(); ++it)
+            if (loadPose(pose, *it)) break;
+        // loadPose(pose);
         std::cout << pose.x() << "-" << pose.y() << "-" << pose.yaw() << std::endl;
         SDP_.setCompositeMap((CompositeMap)*composite_map.get(), pose);
         // auto maps = ((CompositeMap)*composite_map.get()).maps();
@@ -595,16 +649,22 @@ bool slamware::uploadMap()
     return false;
 }
 
-bool slamware::loadPose(rpos::core::Pose& pose)
+bool slamware::loadPose(rpos::core::Pose& pose, const std::string& file_name)
 {
     Json::Reader reader;
     Json::Value root;
     boost::filesystem::path old_cpath = boost::filesystem::current_path(); //取得当前目录
-    boost::filesystem::path file_path = old_cpath / "pose.json"; //path重载了 / 运算符
+    boost::filesystem::path file_path = old_cpath / file_name; //path重载了 / 运算符
     if (boost::filesystem::exists(file_path)) {
         std::ifstream in(file_path.filename().c_str());
-        if (!in) return false;
-        if (!reader.parse(in, root, false)) return false;
+        if (!in) {
+            std::cout << "json file can not read" << std::endl;
+            return false;
+        }
+        if (!reader.parse(in, root, false)) {
+            std::cout << "json parse error" << std::endl;
+            return false;
+        }
 
         rpos::core::Location loc(root["x"].asDouble(), root["y"].asDouble());
         rpos::core::Rotation rot(root["yaw"].asDouble());
@@ -614,10 +674,11 @@ bool slamware::loadPose(rpos::core::Pose& pose)
         return true;
     }
 
+    std::cout << "json file not found" << std::endl;
     return false;
 }
 
-bool slamware::savePose(const rpos::core::Pose & pose)
+bool slamware::savePose(const rpos::core::Pose & pose, const std::string& file_name)
 {
     Json::FastWriter writer;
     Json::Value jPose;
@@ -629,7 +690,7 @@ bool slamware::savePose(const rpos::core::Pose & pose)
     std::string json_str = writer.write(jPose);
     
     boost::filesystem::path cur_path = boost::filesystem::current_path();
-    boost::filesystem::path path = cur_path / "pose.json";
+    boost::filesystem::path path = cur_path / file_name;
     std::ofstream out(path.filename().c_str());
     if (!out) {
         std::cout << path.filename() << " error1." << std::endl;
@@ -670,18 +731,86 @@ bool slamware::isNear(const rpos::core::Pose & p1, const rpos::core::Pose & p2, 
     return false;
 }
 
+bool slamware::isNear(const rpos::core::Location & p1, const rpos::core::Location & p2, double range)
+{
+    double x = p2.x();
+    double y = p2.y();
+
+    if ((x < (p1.x() + range)) &&
+         (x > (p1.x() - range)) &&
+         (y < (p1.y() + range)) &&
+         (y > (p1.y() - range)))
+         return true;
+    
+    return false;
+}
+
 void slamware::savePoseThread(double save_period)
 {
     if(save_period == 0)
         return;
+    
+    // file_vec = {"p1.json", "p2.json", "p3.json"};
+    std::size_t position = 0;
 
     ros::Rate r(1.0 / save_period);
     while(ros::ok())
     {
         rpos::core::Pose pose = SDP_.getPose();
-        if (!savePose(pose)) {
+        std::string file_name = file_vec.at(position++);
+        if (!savePose(pose, file_name)) {
             std::cout << "savePose false!" << std::endl;
         }
+        if (position >= file_vec.size())
+            position = 0;
         r.sleep();
     }
+}
+
+void slamware::goHome(const ros::TimerEvent&, rpos::core::Pose& target_pose, std::string& word)
+{
+    rpos::core::Pose cur_pose = SDP_.getPose();
+    // rpos::core::Pose pose = SDP_.getPose();
+    if (!isNear(cur_pose, target_pose, 0.5)) {
+        std_msgs::String str;
+        str.data = word;//"我要回去了";
+        tts_pub_.publish(str);
+        auto moveAction = SDP_.moveTo(target_pose.location(), false, true);
+        while(ros::ok() && (moveAction.getStatus() != rpos::core::ActionStatusFinished && moveAction.getStatus() != rpos::core::ActionStatusError ) )
+        {
+            boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
+        }
+        auto actionStatus = moveAction.getStatus();
+        if (actionStatus == rpos::core::ActionStatusFinished) {
+            std_msgs::String str;
+            str.data = "到达目的地";
+            tts_pub_.publish(str);
+            rpos::actions::MoveAction act = SDP_.rotateTo(Rotation(target_pose.yaw(), 0.0, 0.0));
+            go_home_timer_ = nh_.createTimer(ros::Duration(go_home_time_out_),  boost::bind(&slamware::goHome, this, _1, SDP_.getHomePose(), std::string("我要回去了")), true);
+        } else if(actionStatus == rpos::core::ActionStatusError) {
+            std_msgs::String str;
+            str.data = "无法到达目的地";
+            tts_pub_.publish(str);
+
+            if (this->try_count_ > this->max_try_count_) return;
+
+            go_home_timer_ = nh_.createTimer(ros::Duration(go_home_time_out_),  boost::bind(&slamware::goHome, this, _1, target_pose, std::string("再次尝试")), true);
+            this->try_count_ += 1;
+        }
+        
+    }
+}
+
+void slamware::batteryMonitor(const ros::TimerEvent&)
+{
+    bool dc_in = SDP_.getBatteryIsCharging();
+    if (dc_in) return;
+
+    int percentage = SDP_.getBatteryPercentage();
+    if (percentage > battery_low_worning_value_)
+        return;
+
+    std_msgs::String str;
+    str.data = "电量剩余" + std::to_string(percentage) + "%, 请充电";
+    tts_pub_.publish(str);
 }

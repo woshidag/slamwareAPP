@@ -30,6 +30,9 @@ namespace rpos {
 		public:
 			rpos::features::motion_planner::Path getRemainingPath();
 			rpos::features::motion_planner::Path getRemainingMilestones();
+
+        protected:
+            int getRunTime();
 		};
 	}
 }

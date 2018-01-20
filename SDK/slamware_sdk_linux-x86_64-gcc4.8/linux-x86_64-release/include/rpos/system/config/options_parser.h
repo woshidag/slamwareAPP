@@ -4,10 +4,11 @@
 #include <map>
 #include <vector>
 #include <boost/noncopyable.hpp>
+#include <rpos/core/rpos_core_config.h>
 
 namespace rpos { namespace system { namespace config {
 
-    struct Option {
+    struct RPOS_CORE_API Option {
         Option()
             : acceptArgument(false)
             , exists(false)
@@ -23,12 +24,16 @@ namespace rpos { namespace system { namespace config {
         std::string argument;
     };
 
-    class OptionParser : private boost::noncopyable {
+    class RPOS_CORE_API OptionParser : private boost::noncopyable {
     public:
-        void addOption(Option* option);
+        OptionParser& addOption(Option* option);
         
         bool parse(int argc, const char* argv[], std::vector<std::string>& outRestArguments);
 		void printHelp();
+
+    public:
+        OptionParser& addVersion(Option* option);
+        OptionParser& addHelp(Option* option);
 
     private:
         std::map<std::string, Option*> shortOptions_;

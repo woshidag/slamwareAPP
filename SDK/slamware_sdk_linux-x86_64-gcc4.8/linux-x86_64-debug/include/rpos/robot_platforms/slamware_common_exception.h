@@ -32,6 +32,9 @@ namespace rpos { namespace robot_platforms {
     RPOS_SLAMWARE_DEFINE_EXCEPTION(UnsupportedCommand);     // unsupported_command  : 7
     RPOS_SLAMWARE_DEFINE_EXCEPTION(ConnectionFail);         // default              : 8
     RPOS_SLAMWARE_DEFINE_EXCEPTION(ParseInvalid);           // parse invalid        : 9
+    RPOS_SLAMWARE_DEFINE_EXCEPTION(InvalidArguments);       // invalid_arguments    : 10
+    RPOS_SLAMWARE_DEFINE_EXCEPTION(OutOfResource);          // out_of_resource      : 11
+    RPOS_SLAMWARE_DEFINE_EXCEPTION(OperationFail);          // operation_fail       : 12
     RPOS_SLAMWARE_DEFINE_EXCEPTION(HttpBadRequest);         // http bad request     : 400
     RPOS_SLAMWARE_DEFINE_EXCEPTION(HttpUnauthorized);       // http unauthorized    : 401
     RPOS_SLAMWARE_DEFINE_EXCEPTION(HttpForbidden);          // http forbidden       : 403

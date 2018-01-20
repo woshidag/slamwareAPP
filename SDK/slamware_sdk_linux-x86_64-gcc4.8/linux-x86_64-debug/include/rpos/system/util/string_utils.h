@@ -14,17 +14,37 @@ namespace rpos { namespace system { namespace util {
     /**
     * \brief Convert value to string representation
     */
-    RPOS_CORE_API std::string to_string(int value);
+    RPOS_CORE_API std::string to_string(std::int32_t value);
 
     /**
     * \brief Convert value to string representation
     */
-    RPOS_CORE_API std::string to_string(long value);
+    RPOS_CORE_API std::string to_string(std::int64_t value);
 
     /**
     * \brief Convert value to string representation
     */
-    RPOS_CORE_API std::string to_string(long long value);
+    RPOS_CORE_API std::string to_string(std::uint32_t value);
+
+	/**
+	* \brief Convert value to string representation
+	*/
+	RPOS_CORE_API std::string to_string(std::uint64_t value);
+
+	/**
+	* \brief Convert value to string representation
+	*/
+	RPOS_CORE_API std::string to_string(float value);
+
+	/**
+	* \brief Convert value to string representation
+	*/
+	RPOS_CORE_API std::string to_string(double value);
+
+    /**
+    * \brief Generate hex string
+    */
+    RPOS_CORE_API std::string to_hex_string(const std::uint8_t* buffer, size_t size, bool upperCase = false);
 
     /**
     * \brief Parse value from string
@@ -193,6 +213,16 @@ namespace rpos { namespace system { namespace util {
     * \brief Transform string's hex representation in textual format back to string.  "6162" to "ab"
     */
     RPOS_CORE_API std::string hexStringToString(const std::string& s);
+
+    /**
+    * \brief Transform all character to lower case
+    */
+    RPOS_CORE_API std::string lowerCase(const std::string& s);
+
+    /**
+    * \brief Transform all character to upper case
+    */
+    RPOS_CORE_API std::string upperCase(const std::string& s);
 
     /**
     * \brief Convert String from UTF8 to WCS

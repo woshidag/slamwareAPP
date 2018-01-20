@@ -135,7 +135,7 @@ namespace rpos {
 					return position_.y() + size_.y();
 				}
 
-                bool contains(const VectorT & point)
+                bool contains(const VectorT & point) const
                 {
                     if (point.x() < x() || point.x() > right()) return false;
                     if (point.y() < y() || point.y() > bottom()) return false;
@@ -147,7 +147,7 @@ namespace rpos {
                     return (size_.x() <= (scalar_t)FLT_EPSILON && size_.y() <= (scalar_t)FLT_EPSILON);
                 }
 
-                bool contains(const _Rectangle & dest)
+                bool contains(const _Rectangle & dest) const
                 {
                     return contains(dest.position()) && contains(dest.position() + dest.size());
                 }

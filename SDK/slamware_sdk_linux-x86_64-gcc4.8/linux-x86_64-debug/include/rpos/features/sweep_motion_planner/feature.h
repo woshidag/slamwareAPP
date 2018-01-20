@@ -30,6 +30,7 @@ namespace rpos { namespace features {
         rpos::actions::SweepMoveAction startSweep();
         rpos::actions::SweepMoveAction sweepSpot(const rpos::core::Location& location);
         rpos::actions::MoveAction goHome();
+        float getSweepArea();
     };
 
 } }

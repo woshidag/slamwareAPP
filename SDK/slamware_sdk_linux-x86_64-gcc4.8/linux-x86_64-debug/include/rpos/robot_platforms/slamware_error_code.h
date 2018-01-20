@@ -25,6 +25,9 @@ namespace rpos { namespace robot_platforms { namespace slamware {
             unsupported_command = 7,
             connection_fail = 8,
             parse_invalid = 9,
+            invalid_arguments = 10,
+            out_of_resource = 11,
+            operation_fail = 12,
             // slamware core platform will not use the following http exceptions.
             http_status_code_bad_request = 400,
             http_status_code_unauthorized = 401,

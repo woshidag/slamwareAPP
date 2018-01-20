@@ -18,6 +18,8 @@
 #include "slamwareAPP/Pose.h"
 
 #include "slamwareAPP/SaveMapSrv.h"
+#include "slamwareAPP/GetPoseSrv.h"
+
 
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
@@ -36,9 +38,11 @@
 #include <rpos/robot_platforms/objects/composite_map.h>
 #include <rpos/robot_platforms/objects/composite_map_writer.h>
 #include <rpos/robot_platforms/objects/composite_map_reader.h>
+#include <rpos/robot_platforms/objects/points_map_layer.h>
 #include <rpos/features/location_provider/map.h>
+#include <rpos/features/location_provider/points_map.h>
 #include <rpos/robot_platforms/slamware_core_platform.h>
-// #include <rpos/robot_platforms/slamware_core_platform.h>
+#include <rpos/features/system_resource/system_parameters.h>
 
 #include "TaskManager.h"
 
@@ -71,13 +75,19 @@ public:
     void guideCallback (const slamwareAPP::Pose::ConstPtr& pose);
     // service
     bool saveMapService (slamwareAPP::SaveMapSrv::Request& request, slamwareAPP::SaveMapSrv::Response& response);
+    bool getPoseService (slamwareAPP::GetPoseSrv::Request& request, slamwareAPP::GetPoseSrv::Response& response);
 
     //func
     bool uploadMap();
-    bool loadPose(rpos::core::Pose & pose);
-    bool savePose(const rpos::core::Pose & pose);
+    bool loadPose(rpos::core::Pose & pose, const std::string& file_name);
+    bool savePose(const rpos::core::Pose & pose, const std::string& file_name);
     bool isNear(const rpos::core::Pose & p1, const rpos::core::Pose & p2, double range=0.5);
+    bool isNear(const rpos::core::Location & p1, const rpos::core::Location & p2, double range);
     void savePoseThread(double save_period);
+
+    //timer func
+    void goHome(const ros::TimerEvent&, rpos::core::Pose& pose, std::string& word);
+    void batteryMonitor(const ros::TimerEvent&);
 
     ros::Publisher scan_pub_;
     ros::Publisher robot_pose_pub_;
@@ -93,6 +103,7 @@ public:
     ros::Subscriber guide_sub_;
 
     ros::ServiceServer save_map_service_;
+    ros::ServiceServer pose_service_;
 
 private:
     void loopThreads();
@@ -115,6 +126,11 @@ private:
     float map_size_down_left_y_;
     float map_size_width_;
     float map_size_height_;
+
+    int battery_low_worning_value_;
+    int go_home_time_out_;
+    int try_count_;
+    int max_try_count_;
 
     tf::TransformBroadcaster tfB_;
 
@@ -144,9 +160,20 @@ private:
     std::string tts_topic_;
 
     std::string save_map_srv_;
+    std::string get_pose_srv_;
+    
 
 
     TaskManager task_manager_;
+
+    //timer
+    ros::Timer go_home_timer_;
+    ros::Timer battery_timer_;
+
+
+    std::vector<std::string> file_vec;
+
+    // const slamwareAPP::Pose::Pose target_pose_;
 };
 
 #endif

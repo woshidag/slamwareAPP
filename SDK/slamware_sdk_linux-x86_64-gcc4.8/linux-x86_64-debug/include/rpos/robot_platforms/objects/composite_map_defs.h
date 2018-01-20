@@ -1,5 +1,6 @@
 #pragma once
 
+#include <rpos/robot_platforms/slamware_sdp_platform_config.h>
 #include <rpos/system/exception.h>
 
 #if (defined(_DEBUG) || defined(DEBUG))
@@ -26,7 +27,7 @@
 
 namespace rpos { namespace robot_platforms { namespace objects {
 
-    class CompositeMapException : public rpos::system::detail::ExceptionBase
+    class RPOS_SLAMWARE_API CompositeMapException : public rpos::system::detail::ExceptionBase
     {
     private:
         typedef rpos::system::detail::ExceptionBase             super_class_type;

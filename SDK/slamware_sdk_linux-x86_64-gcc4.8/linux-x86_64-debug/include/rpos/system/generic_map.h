@@ -67,9 +67,9 @@ namespace rpos { namespace system {
         template < class T >
         const T& get(const TKey& key)
         {
-            auto iter = find_<T>(key)->second->pointer();
+            auto iter = find_<T>(key);
             assert(iter != innerDict_.end());
-            return *(T*)iter->second->pointer();
+            return *(T*)(iter->second->pointer());
         }
 
         void clear()

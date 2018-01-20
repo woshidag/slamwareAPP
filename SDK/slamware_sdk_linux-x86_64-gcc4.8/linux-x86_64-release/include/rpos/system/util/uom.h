@@ -199,9 +199,9 @@ namespace rpos{ namespace system{ namespace util {
 		return (RepT)output.flatten();
 	}
 
-	bool try_parse(const std::string& s, units::Unit& v);
+	RPOS_CORE_API bool try_parse(const std::string& s, units::Unit& v);
 
-	bool split_number_and_units(const std::string& s, std::string& number, std::vector<units::Unit>& multiple_units, std::vector<units::Unit>& divide_units);
+	RPOS_CORE_API bool split_number_and_units(const std::string& s, std::string& number, std::vector<units::Unit>& multiple_units, std::vector<units::Unit>& divide_units);
 
 	template < class RepT >
 	bool try_parse_with_unit(const std::string& s, RepT& v)
@@ -220,12 +220,10 @@ namespace rpos{ namespace system{ namespace util {
 
 		for (auto iter = divide_units.begin(); iter != divide_units.end(); iter++)
 		{
-			switch (*iter)
-			{
-			case units::celsius:
-			case units::fahrenheit:
-				return false;
-			}
+            if ((*iter) == units::celsius)
+                return false;
+            else if ((*iter) == units::fahrenheit)
+                return false;
 		}
 
 		v = normalize_unit_value<RepT>(av, multiple_units, divide_units);

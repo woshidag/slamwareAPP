@@ -10,34 +10,43 @@ namespace rpos { namespace robot_platforms { namespace detail { namespace object
         std::string newVersion;
         std::string newVersionReleaseDate;
         std::string newVersionChangeLog;
+    };
 
-        UpdateInfo& operator=(const UpdateInfo& that)
-        {
-            currentVersion = that.currentVersion;
-            newVersion = that.newVersion;
-            newVersionReleaseDate = that.newVersionReleaseDate;
-            newVersionChangeLog = that.newVersionChangeLog;
+    enum FirmwareInfoCode
+    {
+        INIT=0,
+        SUCCESSFUL,
+        CONNECT_ERROR,
+        HTTP_ERROR,
+        SYSTEM_ERROR,
+        NO_AVAILABLE_FIRMWARE
+    };
 
-            return *this;
-        }
+    enum UpdateFirmwareStep
+    {
+        UpdateFirmwarePreparing,
+        UpdateFirmwarePrepareFinished,
+        UpdateFirmwareDownloading,
+        UpdateFirmwareDownloadFinished,
+        UpdateFirmwareUpdating,
+        UpdateFirmwareUpdateFinished
+    };
+
+    enum UpdateProgressStatus
+    {
+        UpdateProgressSuccess,
+        UpdateProgressError,
+        UpdateProgressInit,
+        UpdateProgressUpgrade
     };
 
     struct UpdateProgress
     {
-        unsigned int currentStep;           // Range from 0 to {totalSteps - 1}.
+        UpdateFirmwareStep currentStep;     // Range from 0 to {totalSteps - 1}.
         unsigned int totalSteps;            // The number of total steps.
         std::string currentStepName;        // The name of the current step.
-        unsigned int currentStepProgress;   // Expressed as a percentage. 
-
-        UpdateProgress& operator=(const UpdateProgress& that)
-        {
-            currentStep = that.currentStep;
-            totalSteps = that.totalSteps;
-            currentStepName = that.currentStepName;
-            currentStepProgress = that.currentStepProgress;
-
-            return *this;
-        }
+        unsigned int currentStepProgress;   // Expressed as a percentage.
+        UpdateProgressStatus status;        // Current status
     };
 
 }}}}

@@ -14,6 +14,7 @@
 #include <rpos/features/sweep_motion_planner.h>
 #include <rpos/features/system_resource.h>
 #include <rpos/features/impact_sensor_feature.h>
+#include <rpos/features/statistics_provider.h>
 #include <rpos/robot_platforms/objects/composite_map.h>
 #include <rpos/robot_platforms/objects/slamware_scheduler_service.h>
 #include <rpos/robot_platforms/objects/slamware_firmware_service.h>
@@ -31,9 +32,9 @@ namespace rpos { namespace robot_platforms {
         class SlamwareHttpsClient;
     }
 
-    using namespace rpos::robot_platforms::http;
+    using namespace robot_platforms::http;
 
-    class SlamwareAgentPlatform
+    class RPOS_SLAMWARE_API SlamwareAgentPlatform
     {
         friend class detail::SlamwareActionFactory;
     public:
@@ -54,33 +55,47 @@ namespace rpos { namespace robot_platforms {
         features::SweepMotionPlanner getSweepMotionPlanner();
         features::SystemResource getSystemResource();
         features::ImpactSensor getImpactSensor();
+        features::StatisticsProvider getStatisticsProvider();
 
     public:
         // Artifacts Provider APIs
+        std::vector<core::Line> getLines(features::artifact_provider::ArtifactUsage usage);
+
+        bool addLine(features::artifact_provider::ArtifactUsage usage, const core::Line& line);
+
+        bool addLines(features::artifact_provider::ArtifactUsage usage, const std::vector<core::Line>& lines);
+
+        bool removeLineById(features::artifact_provider::ArtifactUsage usage, rpos::core::SegmentID id);
+
+        bool clearLines(features::artifact_provider::ArtifactUsage usage);
+
+        bool moveLine(features::artifact_provider::ArtifactUsage usage, const core::Line& line);
+        bool moveLines(features::artifact_provider::ArtifactUsage usage, const std::vector<core::Line>& lines);
+
         std::vector<core::Line> getWalls();
 
         bool addWall(const core::Line& wall);
 
         bool addWalls(const std::vector<core::Line>& walls);
 
-        bool clearWallById(const rpos::core::SegmentID& id);
+        bool clearWallById(const core::SegmentID& id);
 
         bool clearWalls();
 
     public:
         // Location Provider APIs
-        std::vector<rpos::features::location_provider::MapType> getAvailableMaps();
+        std::vector<features::location_provider::MapType> getAvailableMaps();
 
-        rpos::features::location_provider::Map getMap(rpos::features::location_provider::MapType type, core::RectangleF area, rpos::features::location_provider::MapKind kind);
+        features::location_provider::Map getMap(features::location_provider::MapType type, core::RectangleF area, features::location_provider::MapKind kind);
 
-        bool setMap(const core::Pose& pose, const rpos::features::location_provider::Map& map, rpos::features::location_provider::MapType type, rpos::features::location_provider::MapKind kind, bool partially = false);
-        bool setMap(const rpos::features::location_provider::Map& map, rpos::features::location_provider::MapType type, rpos::features::location_provider::MapKind kind, bool partially = false);
+        bool setMapAndPose(const core::Pose& pose, const features::location_provider::Map& map, features::location_provider::MapType type, features::location_provider::MapKind kind, bool partially = false);
+        bool setMap(const features::location_provider::Map& map, features::location_provider::MapType type, features::location_provider::MapKind kind, bool partially = false);
 
-        core::RectangleF getKnownArea(rpos::features::location_provider::MapType type, rpos::features::location_provider::MapKind kind);
+        core::RectangleF getKnownArea(features::location_provider::MapType type, features::location_provider::MapKind kind);
 
         bool clearMap();
 
-        bool clearMap(rpos::features::location_provider::MapKind kind);
+        bool clearMap(features::location_provider::MapKind kind);
 
         core::Location getLocation();
 
@@ -92,33 +107,60 @@ namespace rpos { namespace robot_platforms {
 
         bool setMapLocalization(bool localization);
 
-        bool getMapUpdate();
+        bool getMapUpdate(rpos::features::location_provider::MapKind kind = rpos::features::location_provider::EXPLORERMAP);
 
-        bool setMapUpdate(bool update);
+        bool setMapUpdate(bool update, rpos::features::location_provider::MapKind kind = rpos::features::location_provider::EXPLORERMAP);
 
         int getLocalizationQuality();
 
+        features::location_provider::PointPDF getAuxLocation();
+
+        core::Pose getHomePose();
+        bool setHomePose(core::Pose);
+
     public:
         // Motion Planner APIs
-        rpos::actions::MoveAction moveTo(const std::vector<rpos::core::Location>& locations, bool appending, bool isMilestone);
+        actions::MoveAction moveTo(const std::vector<core::Location>& locations, bool appending, bool isMilestone);
 
-        rpos::actions::MoveAction moveTo(const rpos::core::Location& location, bool appending, bool isMilestone);
+        actions::MoveAction moveTo(const core::Location& location, bool appending, bool isMilestone);
 
-        rpos::actions::MoveAction moveBy(const rpos::core::Direction& direction);
+        actions::MoveAction moveTo(const std::vector<core::Location>& locations, const features::motion_planner::MoveOptions& options, float yaw = 0);
 
-        rpos::actions::MoveAction rotateTo(const rpos::core::Rotation& orientation);
+        actions::MoveAction moveTo(const core::Location& location, const features::motion_planner::MoveOptions& options, float yaw = 0);
 
-        rpos::actions::MoveAction rotate(const rpos::core::Rotation& rotation);
+        actions::MoveAction moveBy(const core::Direction& direction);
 
-        rpos::actions::MoveAction getCurrentAction();
+        actions::MoveAction moveBy(const core::Direction& direction, const features::motion_planner::MoveOptions& options);
 
-        rpos::features::motion_planner::Path searchPath(const rpos::core::Location& location);
+        actions::MoveAction moveBy(float theta, const features::motion_planner::MoveOptions& options);
 
-        rpos::actions::SweepMoveAction startSweep();
+        actions::MoveAction rotateTo(const core::Rotation& orientation);
 
-		rpos::actions::SweepMoveAction sweepSpot(const rpos::core::Location& location);
+        actions::MoveAction rotateTo(const core::Rotation& orientation, const features::motion_planner::MoveOptions& options);
 
-        rpos::actions::MoveAction goHome();
+        actions::MoveAction rotate(const core::Rotation& rotation);
+
+        actions::MoveAction rotate(const core::Rotation& rotation, const features::motion_planner::MoveOptions& options);
+
+        actions::MoveAction recoverLocalization(const core::RectangleF& area);
+
+        actions::MoveAction getCurrentAction();
+
+        std::vector<core::Location> getKeyPoints();
+
+        void setKeyPoints(const std::vector<core::Location>& keyPoints);
+
+        features::motion_planner::Path searchPath(const core::Location& location);
+
+        features::motion_planner::Path getRobotTrack(int count);
+
+        actions::SweepMoveAction startSweep();
+
+        actions::SweepMoveAction sweepSpot(const core::Location& location);
+
+        actions::MoveAction goHome();
+
+        float getSweepArea();
 
     public:
         // System Resource APIs
@@ -128,30 +170,41 @@ namespace rpos { namespace robot_platforms {
 
         bool getDCIsConnected();
 
+        features::system_resource::PowerStatus getPowerStatus();
+
+        void wakeUp();
+
         int getBoardTemperature();
 
         std::string getSDPVersion();
 
         std::string getSDKVersion();
 
-        rpos::features::system_resource::LaserScan getLaserScan();
+        features::system_resource::LaserScan getLaserScan();
 
-        bool restartModule(rpos::features::system_resource::RestartMode mode = rpos::features::system_resource::RestartModeSoft);
+        bool restartModule(features::system_resource::RestartMode mode = features::system_resource::RestartModeSoft);
 
         bool setSystemParameter(const std::string& param, const std::string& value);
 
         std::string getSystemParameter(const std::string& param);
 
-        rpos::features::system_resource::DeviceInfo getDeviceInfo();
+        features::system_resource::DeviceInfo getDeviceInfo();
 
 
-        rpos::features::system_resource::BaseHealthInfo getRobotHealth();
+        features::system_resource::BaseHealthInfo getRobotHealth();
         void clearRobotHealth(int errorCode);
 
-        bool configurateNetwork(rpos::features::system_resource::NetworkMode mode, const std::map<std::string, std::string>& options);
+        bool configurateNetwork(features::system_resource::NetworkMode mode, const std::map<std::string, std::string>& options);
 
         std::map<std::string, std::string> getNetworkStatus();
 
+        features::system_resource::HeartBeatToken startHeartBeat(int heartBeatTimeoutInSeconds);
+
+        void refreshHeartBeat(features::system_resource::HeartBeatToken token);
+
+        void stopHeartBeat(features::system_resource::HeartBeatToken token);
+
+        void voiceRespond();
 
     public:
         // Impact Sensor APIs
@@ -163,9 +216,9 @@ namespace rpos { namespace robot_platforms {
 
         bool getSensorValue(features::impact_sensor::impact_sensor_id_t sensorId, features::impact_sensor::ImpactSensorValue& value);
 
-        rpos::robot_platforms::objects::CompositeMap getCompositeMap();
+        robot_platforms::objects::CompositeMap getCompositeMap();
 
-        void setCompositeMap(const rpos::robot_platforms::objects::CompositeMap& map, const core::Pose& pose);
+        void setCompositeMap(const robot_platforms::objects::CompositeMap& map, const core::Pose& pose);
 
 
     public:
@@ -187,7 +240,7 @@ namespace rpos { namespace robot_platforms {
         bool startFirmwareUpdate();
 
         detail::objects::UpdateProgress getFirmwareUpdateProgress();
-                
+
     private:
         boost::shared_ptr<detail::SlamwareHttpsClient> getHttpsClient();
 

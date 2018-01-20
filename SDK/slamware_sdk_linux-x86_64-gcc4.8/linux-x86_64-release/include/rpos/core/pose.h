@@ -19,7 +19,8 @@ namespace rpos {
             FORWARD,
             BACKWARD,
             TURNRIGHT,
-            TURNLEFT
+            TURNLEFT,
+            INVALIDDIRECTION
         };
 
         class RPOS_CORE_API Location{
@@ -31,6 +32,7 @@ namespace rpos {
 
         public:
             Location& operator=(const Location&);
+            bool operator==(const Location&) const;
 
         public:
             double x() const;
@@ -125,7 +127,7 @@ namespace rpos {
         public:
             ACTION_DIRECTION direction() const;
             ACTION_DIRECTION& direction();
-
+            operator bool() const;
         private:
             ACTION_DIRECTION direction_;
         };

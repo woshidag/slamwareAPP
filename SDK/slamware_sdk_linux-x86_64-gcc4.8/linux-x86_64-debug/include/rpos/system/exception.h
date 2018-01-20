@@ -36,22 +36,22 @@ ExClass(const std::string& msg = "") throw()               \
 
 namespace rpos { namespace system { namespace detail {
 
-    class ExceptionBase : public std::exception
+    class RPOS_CORE_API ExceptionBase : public std::exception
     {
     public:
-        RPOS_CORE_API ExceptionBase(const std::string& msg = "") throw();
+        ExceptionBase(const std::string& msg = "") throw();
              
-        RPOS_CORE_API virtual ~ExceptionBase() throw();
-             
-        RPOS_CORE_API void Init(const char* file, const char* func, int line);
-             
-        RPOS_CORE_API virtual std::string getClassName() const;
-             
-        RPOS_CORE_API virtual std::string getMessage() const;
-             
-        RPOS_CORE_API const char* what() const throw();
-             
-        RPOS_CORE_API const std::string& toString() const;
+        virtual ~ExceptionBase() throw();
+        
+        void Init(const char* file, const char* func, int line);
+        
+        virtual std::string getClassName() const;
+        
+        virtual std::string getMessage() const;
+        
+        const char* what() const throw();
+        
+        const std::string& toString() const;
              
         //std::string getStackTrace() const;
              
