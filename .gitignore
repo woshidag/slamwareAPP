@@ -16,3 +16,5 @@ ipch
 *.creator
 *.files
 *.includes
+
+SDK/*
