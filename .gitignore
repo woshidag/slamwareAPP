@@ -17,4 +17,4 @@ ipch
 *.files
 *.includes
 
-SDK/*
+SDK
